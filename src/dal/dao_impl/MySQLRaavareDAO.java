@@ -55,10 +55,8 @@ public class MySQLRaavareDAO implements RaavareDAO {
 	public void createRaavare(RaavareDTO raavare) throws DALException {
 		Connector connector = new Connector();
 		try {
-			String query = "INSERT INTO `raavare` (`raavare_id`, `raavare_navn`, `leverandoer`) "
-					+ "VALUES ('"+raavare.getRaavareId()+"', '"+raavare.getRaavareNavn()+"', '"+raavare.getLeverandoer()+"');";
-			System.out.println(query);
-			connector.doUpdate(query);
+			connector.doUpdate("INSERT INTO `raavare` (`raavare_id`, `raavare_navn`, `leverandoer`) "
+					+ "VALUES ('"+raavare.getRaavareId()+"', '"+raavare.getRaavareNavn()+"', '"+raavare.getLeverandoer()+"');");
 		} catch (SQLException e) {
 			throw new DALException(e);
 		}
