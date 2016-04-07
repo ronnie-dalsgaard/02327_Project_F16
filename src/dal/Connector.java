@@ -6,13 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * @author Ronnie Dalsgaard
- */
+/** @author Ronnie Dalsgaard */
 public class Connector {
     private final String HOST     = "Localhost";
-    private final int    PORT     = 3306;
-    private final String DATABASE = "02327_project";
+    private final String PORT     = "3306";
+    private final String DATABASE = "DB_NAME";
     private final String USERNAME = "root"; 
     private final String PASSWORD = "";
     private Connection connection;

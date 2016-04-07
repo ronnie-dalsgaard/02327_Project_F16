@@ -75,6 +75,14 @@ public class MySQLProduktBatchDAO implements ProduktBatchDAO {
 			for(ProduktBatchKompDTO k : pb.getList()){
 				connector.doUpdate("INSERT INTO produktbatchkomponent(pb_id, rb_id, tara, netto, opr_id) "
 						+ "VALUES ('"+pb.getPbId()+"', '"+k.getRbId()+"', '"+k.getTara()+"', '"+k.getNetto()+"', '"+k.getOprId()+"'),");
+
+				// Update amount
+				connector.doUpdate("UPDATE raavarebatch SET maengde = maengde -"+k.getNetto()+" WHERE rb_id = '"+k.getRbId()+"';");
+				ResultSet rs = connector.doQuery("SELECT maengde FROM raavarebatch WHERE rb_id = '"+k.getRbId()+"';");
+				if(rs.getDouble("maengde") < 0){
+					connector.doUpdate("ROLLBACK;");
+					throw new DALException("Insuficient amount of raavarebatch with ID "+k.getRbId());
+				}
 			}
 			connector.doUpdate("COMMIT;");
 					
@@ -83,8 +91,10 @@ public class MySQLProduktBatchDAO implements ProduktBatchDAO {
 				connector.doUpdate("ROLLBACK;");
 			} catch (SQLException e1) {
 				e1.printStackTrace();
+				throw new DALException("Unable to rollback");
 			}
 			e.printStackTrace();
+			throw new DALException("Unable to create produktbatch");
 		}
 	}
 
@@ -94,10 +104,27 @@ public class MySQLProduktBatchDAO implements ProduktBatchDAO {
 		try {
 			connector.doUpdate("START TRANSACTION");
 			connector.doUpdate("UPDATE produktbatch SET `status`='"+pb.getStatus()+"', recept_id='"+pb.getReceptId()+"' WHERE `pb_id`='"+pb.getPbId()+"';");
+			
+			// Put raavare back in stock
+			ResultSet rs = connector.doQuery("SELECT * FROM produktbatchkomponent WHERE pb_id = '"+pb.getPbId()+"';");
+			while(rs.next()){
+				int rbId = rs.getInt("rb_id");
+				double netto = rs.getDouble("netto");
+				connector.doUpdate("UPDATE raavarebatch SET maengde = maengde + "+netto+" WHERE rb_id = '"+rbId+"';");
+			}
+			// Delete all the old batches
 			connector.doUpdate("DELETE FROM produktbatch WHERE `pb_id`='"+pb.getPbId()+"';");
+			// Add all the new batches
 			for(ProduktBatchKompDTO k : pb.getList()){
 				connector.doUpdate("INSERT INTO produktbatchkomponent(pb_id, rb_id, tara, netto, opr_id) "
 						+ "VALUES ('"+pb.getPbId()+"', '"+k.getRbId()+"', '"+k.getTara()+"', '"+k.getNetto()+"', '"+k.getOprId()+"'),");
+				// Update amount
+				connector.doUpdate("UPDATE raavarebatch SET maengde = maengde -"+k.getNetto()+" WHERE rb_id = '"+k.getRbId()+"';");
+				ResultSet rs1 = connector.doQuery("SELECT maengde FROM raavarebatch WHERE rb_id = '"+k.getRbId()+"';");
+				if(rs1.getDouble("maengde") < 0){
+					connector.doUpdate("ROLLBACK;");
+					throw new DALException("Insuficient amount of raavarebatch with ID "+k.getRbId());
+				}
 			}
 			connector.doUpdate("COMMIT;");
 					
